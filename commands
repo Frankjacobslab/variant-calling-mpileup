@@ -1,0 +1,25 @@
+###### Variant calling for NOTCH2NL exon 1 variants from BAM files. v01 14/05/2019 G.A. Lodewijk
+
+
+### Prepare genome fasta file (hg38), download hg38.fa.gz from http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/
+# unzip and renamed to hg38.fasta, then index with samtools:
+
+
+samtools faidx hg38.fasta
+ 
+ 
+### Use samtools mpileup command to get sequence information, see manual http://www.htslib.org/doc/samtools-1.2.html
+# -l specifies a list of variants of interest. If not specified, the whole genome will be analyzed (will take a long time)
+# -b refers to a list of all BAM samples to analyze (one per line) [list-of-BAMs.txt]
+# -q 0 sets minimum mapQ of reads to 0. Multi-mapping reads usually get a mapQ of 0, but we want to include them to account for the different NOTCH2NL loci in hg38.
+ 
+ 
+samtools mpileup -uvf hg38.fasta -t DP -t AD -l n2nl_vars_exon_annotation_v02.bed -Q 13 -q 0 -b [list-of-BAMs.txt] > output.vcf
+
+
+### Use bcftools query to clean up the output from mpileup
+# -H to include the sample names specified in [list-of-BAMs.txt]
+# can modifiy the code to extract further alternative variants per position, see manual https://samtools.github.io/bcftools/bcftools.html
+
+
+bcftools query -f '%CHROM \t%POS \t%REF \t%ALT{0} [\t%DP\t%AD{0}\t%AD{1}]\n' -H output.vcf > query_output.vcf
